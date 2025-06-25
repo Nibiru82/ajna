@@ -24,14 +24,12 @@ export default async function handler(request, response) {
       return response.status(500).json({ error: 'API Key is not configured on the server' });
     }
 
-    // --- C'EST LA LIGNE QUI A ÉTÉ CORRIGÉE ---
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     const geminiResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        // Cette structure avec "role" est aussi correcte.
         contents: [{ role: "user", parts: [{ text: prompt }] }]
       }),
     });
