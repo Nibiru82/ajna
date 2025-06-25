@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ajna : L'Exploration Interactive</title>
     <meta name="description" content="Explorez l'univers introspectif et spirituel du rappeur Ajna, entre cloud rap et poésie mélancolique.">
-    <meta name="keywords" content="Ajna, rap fr, Boys & Basement, L'HERMITE, Mektoub, cloud rap, rap introspectif">
+    <meta name="keywords" content="Ajna, rap fr, Boys & Basement, GOLDMAKER, L'HERMITE, SHERPA, cloud rap">
     
     <link rel="icon" type="image/png" href="nibiru logo rap site.png">
 
@@ -182,27 +182,42 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            // IMPORTANT : Remplace cette fonction de simulation par ton véritable appel au proxy Vercel
+            // C'est le proxy qui fonctionne pour toi, on le garde !
             async function fetchFromGemini(prompt) {
                 try {
-                    const response = await fetch('/api/gemini-proxy', { // Assure-toi que cette URL est correcte
+                    const response = await fetch('/api/gemini-proxy', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ prompt: prompt })
                     });
-                    if (!response.ok) throw new Error(`Erreur du serveur proxy: ${response.statusText}`);
-                    const result = await response.json();
-                    if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
-                        return result.candidates[0].content.parts[0].text;
-                    } else {
-                        return "Désolé, la réponse de l'IA est invalide.";
+                    if (!response.ok) {
+                       const errorData = await response.json();
+                       throw new Error(`Erreur du serveur proxy: ${errorData.error?.message || response.statusText}`);
                     }
+                    return await response.json();
                 } catch (error) {
                     console.error("Erreur d'appel à l'API Gemini:", error);
-                    // Affiche une erreur plus visible pour l'utilisateur en cas de problème
-                    return `Une erreur est survenue lors de la connexion à l'IA. Vérifiez la configuration du proxy et votre clé API. Détails: ${error.message}`;
+                    return { error: `Une erreur est survenue lors de la connexion à l'IA. Détails: ${error.message}` };
                 }
             }
+            
+            async function generateAndDisplay(button, outputDiv, prompt) {
+                button.disabled = true;
+                outputDiv.style.display = 'block';
+                outputDiv.innerHTML = '<div class="flex items-center gap-2"><div class="loader"></div><span>Analyse en cours...</span></div>';
+
+                const result = await fetchFromGemini(prompt);
+                
+                if (result.error) {
+                    outputDiv.innerHTML = result.error;
+                } else if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
+                    outputDiv.innerHTML = result.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+                } else {
+                    outputDiv.innerHTML = "Désolé, la réponse de l'IA est invalide ou vide.";
+                }
+                button.textContent = 'Analyse générée ✨';
+            }
+
 
             const sections = document.querySelectorAll('.content-section');
             const navLinks = document.querySelectorAll('#nav-links .nav-link');
@@ -210,14 +225,17 @@
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const mobileMenu = document.getElementById('mobile-menu');
 
-            // Données spécifiques à Ajna (version la plus à jour)
+            // --- C'EST ICI LA MISE À JOUR IMPORTANTE ---
+            // Données de la discographie d'Ajna, à jour et ordonnées.
             const timelineData = [
-                { year: '2022', title: 'L\'HERMITE', type: 'EP', description: "Premier EP officiel qui pose les bases de sa voix suave et de son univers. Il se fait remarquer avec des titres comme 'Ajcension' et 'Paraffine'." },
-                { year: '2022', title: 'LE HOMA', type: 'EP', description: "Il poursuit son élan créatif la même année avec ce projet qui continue d'explorer des sonorités introspectives et mélancoliques." },
-                { year: '2022', title: 'SHERPA', type: 'EP', description: "Troisième projet de l'année, 'SHERPA' confirme sa productivité et affine son identité, terminant une année de fondation pour sa carrière." },
-                { year: '2023', title: 'Boys & Basement', type: 'Album', description: "Projet plus long et complet qui le révèle à un plus grand public. Il y dépeint le quotidien d'un jeune homme dans l'Est parisien, entre rêves de réussite et réalité parfois sombre." },
-                { year: '2024', title: 'Mektoub', type: 'Single', description: "Un morceau charnière qui explore le thème du destin. La production est plus directe, le ton plus affirmé, marquant une évolution vers une acceptation lucide de son chemin." },
+                { year: '2022', title: 'L\'HERMITE', type: 'Album', description: "Premier album qui établit son style introspectif et ses sonorités cloud rap. Un projet fondateur qui pose les bases de son univers." },
+                { year: '2022', title: 'SHERPA', type: 'EP', description: "EP qui confirme sa productivité et affine son identité musicale, concluant une année de création intense avec des titres comme 'AJCENSION'." },
+                { year: '2023', title: 'Boys & Basement', type: 'Album', description: "Album charnière qui le révèle à un plus large public. Les thèmes de la jeunesse parisienne, des doutes et des ambitions sont explorés sur des productions plus affirmées." },
+                { year: '2024', title: 'GOLDMAKER', type: 'Album', description: "Un projet qui montre une nouvelle facette artistique, avec des sonorités parfois plus solaires et des thématiques tournées vers la réussite et la création." },
+                { year: '2025', title: 'Before The Antidote', type: 'EP', description: "Dernier projet en date, cet EP de deux titres offre un aperçu de sa direction future, avec une production toujours aussi soignée et atmosphérique." }
             ];
+            // --- FIN DE LA MISE À JOUR ---
+
 
             const universData = [
                 {
@@ -262,14 +280,9 @@
                     timelineDetailsContainer.innerHTML = `<div class="bg-neutral-800 p-6 rounded-lg shadow-md border border-neutral-700"><h3 class="text-2xl font-bold text-white">${item.title} (${item.year})</h3><p class="mt-2 text-neutral-300">${item.description}</p><div class="mt-4"><button class="gemini-btn text-black px-4 py-2 rounded-md font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">✨ Générer une analyse</button><div class="gemini-project-output mt-4 text-sm text-neutral-400 border-l-4 border-amber-400 pl-4" style="display: none;"></div></div></div>`;
                     const geminiBtn = timelineDetailsContainer.querySelector('.gemini-btn');
                     const outputDiv = timelineDetailsContainer.querySelector('.gemini-project-output');
-                    geminiBtn.addEventListener('click', async () => {
-                        geminiBtn.disabled = true;
-                        outputDiv.style.display = 'block';
-                        outputDiv.innerHTML = '<div class="flex items-center gap-2"><div class="loader"></div><span>Analyse en cours...</span></div>';
+                    geminiBtn.addEventListener('click', () => {
                         const prompt = `Rédige une courte analyse critique (environ 50-70 mots) du projet '${item.title}' du rappeur français Ajna, en te basant sur cette description : '${item.description}'. Mets en lumière son ambiance et ses thèmes.`;
-                        const result = await fetchFromGemini(prompt);
-                        outputDiv.innerHTML = result.replace(/\n/g, '<br>');
-                        geminiBtn.textContent = 'Analyse générée ✨';
+                        generateAndDisplay(geminiBtn, outputDiv, prompt);
                     });
                 });
                 timelineContainer.appendChild(timelineItem);
@@ -283,13 +296,8 @@
                 card.innerHTML = `<h3 class="text-2xl font-bold text-white">${item.title}</h3><p class="mt-2 text-neutral-300 leading-relaxed">${item.description}</p><div class="mt-4"><button class="gemini-btn text-black px-4 py-2 rounded-md font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">✨ Analyser le concept</button><div class="gemini-univers-output mt-4 text-sm text-neutral-400 border-l-4 border-amber-400 pl-4" style="display: none;"></div></div>`;
                 const geminiBtn = card.querySelector('.gemini-btn');
                 const outputDiv = card.querySelector('.gemini-univers-output');
-                geminiBtn.addEventListener('click', async () => {
-                    geminiBtn.disabled = true;
-                    outputDiv.style.display = 'block';
-                    outputDiv.innerHTML = '<div class="flex items-center gap-2"><div class="loader"></div><span>Analyse en cours...</span></div>';
-                    const result = await fetchFromGemini(item.prompt);
-                    outputDiv.innerHTML = result.replace(/\n/g, '<br>');
-                    geminiBtn.textContent = 'Analyse générée ✨';
+                geminiBtn.addEventListener('click', () => {
+                    generateAndDisplay(geminiBtn, outputDiv, item.prompt);
                 });
                 universGrid.appendChild(card);
             });
